@@ -23,38 +23,114 @@ who want auto-changelogs as Issues, teams who want to surface what each PR actua
 
 ---
 
-## Install (3 minutes)
+## Install
 
-### 1. Copy the two files into your repo
+Total time: **5–10 minutes** if you're new to GitHub Actions / Anthropic, **2 minutes** if you've done both before.
 
-From this folder, copy these into **your repo's `.github/workflows/` directory**:
+### Step 1 — Copy the two files into your repo
 
-```
-issues-agent.yml          →  .github/workflows/issues-agent.yml
-issues-agent-runner.mjs   →  .github/workflows/issues-agent-runner.mjs
-```
+These two files live at the root of THIS repo:
 
-If `.github/workflows/` doesn't exist yet, create it first.
+- [`issues-agent.yml`](issues-agent.yml)
+- [`issues-agent-runner.mjs`](issues-agent-runner.mjs)
 
-### 2. Add your Anthropic API key as a secret
+You need to put them in your own repo's `.github/workflows/` folder. Pick whichever method you find easier:
 
-1. Go to your GitHub repo → **Settings → Secrets and variables → Actions**
-2. Click **New repository secret**
-3. Name: `ANTHROPIC_API_KEY`
-4. Value: get one at [console.anthropic.com/settings/keys](https://console.anthropic.com/settings/keys) (starts with `sk-ant-...`)
-5. Click **Add secret**
+**Option A — copy by hand**
 
-That's it for required setup. The agent posts Issues using the workflow's built-in `GITHUB_TOKEN` — no PAT needed (the workflow YAML already declares the right `permissions:`).
+1. In your local repo (the one you want documented), open a terminal at the repo root.
+2. Create the workflows folder if it doesn't exist:
+   ```bash
+   mkdir -p .github/workflows
+   ```
+3. From your browser, open each file in this repo, click the **Raw** button, save the file with the same filename into `.github/workflows/` of your repo.
 
-### 3. Push and watch it run
+**Option B — one-liner with curl** (Linux/macOS/WSL/Git-Bash)
 
 ```bash
-git add .github/workflows/
+mkdir -p .github/workflows
+curl -fsSL -o .github/workflows/issues-agent.yml https://raw.githubusercontent.com/Veranzi/issues-agent/main/issues-agent.yml
+curl -fsSL -o .github/workflows/issues-agent-runner.mjs https://raw.githubusercontent.com/Veranzi/issues-agent/main/issues-agent-runner.mjs
+```
+
+Verify both files are now in your repo at:
+```
+.github/workflows/issues-agent.yml
+.github/workflows/issues-agent-runner.mjs
+```
+
+> **Important:** GitHub Actions ONLY scans `.github/workflows/`. If you put them anywhere else, the workflow will never run.
+
+---
+
+### Step 2 — Get an Anthropic API key
+
+#### 2a. If you don't have an Anthropic account yet
+
+1. Go to **https://console.anthropic.com/**
+2. Click **Sign up** (top-right). Use Google sign-in or email + password.
+3. Verify your email by clicking the link Anthropic sends you.
+4. Once you're inside the console, click **Plans & Billing** in the left sidebar.
+5. Click **Add payment method** and enter a card. You'll be charged **per-API-call** (no monthly fee). Add at least **$5** of credit to start — that's enough for hundreds of Issues Agent runs.
+
+#### 2b. Create the API key
+
+1. Visit **https://console.anthropic.com/settings/keys** (or in the console: **Settings → API Keys**)
+2. Click **Create Key** (top-right, blue button).
+3. **Name**: type something descriptive like `Issues Agent for my-repo-name`.
+4. **Workspace**: leave as Default unless you've created others.
+5. Click **Create Key**.
+6. **A key starting with `sk-ant-api03-...` appears in a dialog. COPY IT NOW.** Anthropic only shows you the full key once. If you close this dialog without copying, you'll need to delete the key and create a new one.
+7. Paste the key somewhere safe — a password manager, or a temporary text file you'll delete after Step 3.
+
+---
+
+### Step 3 — Add the key as a GitHub repository secret
+
+1. Open your repo on **github.com** in your browser (the same repo where you put the workflow files in Step 1).
+2. Click the **Settings** tab. (It's at the top-right, next to Insights. You need admin access to the repo to see it.)
+3. In the left sidebar, scroll down to the **Security** section.
+4. Click **Secrets and variables** to expand it.
+5. Click **Actions** (the option underneath "Secrets and variables").
+6. You'll see three tabs at the top: *Secrets / Variables / Codespaces*. You're on **Secrets** — that's correct.
+7. Click the green **New repository secret** button (top-right of the secrets list).
+8. **Name** field: type exactly the following — case matters, no spaces, no quotes:
+   ```
+   ANTHROPIC_API_KEY
+   ```
+9. **Secret** field: paste the `sk-ant-api03-...` key you copied from Anthropic.
+10. Click the green **Add secret** button.
+
+The secret is now encrypted by GitHub. Even repo admins can never read it again — only the workflow can use it. You can safely delete the temporary copy you saved.
+
+---
+
+### Step 4 — Push and watch it run
+
+In your terminal, in the repo where you put the workflow files:
+
+```bash
+git add .github/workflows/issues-agent.yml .github/workflows/issues-agent-runner.mjs
 git commit -m "Add Issues Agent"
 git push
 ```
 
-Open your repo's **Actions** tab → you should see "Issues Agent" running. After ~30s, check the **Issues** tab — auto-generated Issues should appear there.
+Then:
+
+1. Open your repo on github.com.
+2. Click the **Actions** tab (next to Pull requests).
+3. In the left sidebar you should see **Issues Agent** listed.
+4. Click it — you'll see your push triggered a run.
+5. Wait ~30 seconds for it to finish. A green check mark = success.
+6. Click the **Issues** tab — auto-generated issues should be there.
+
+**That's it.** Every future `git push` to `main` will auto-document the new commits. You don't need to do anything else.
+
+---
+
+### Don't have repo admin access?
+
+You can still install this — but you'll need someone with admin rights to perform Step 3 (adding the secret). Send them this section as a request.
 
 ---
 
