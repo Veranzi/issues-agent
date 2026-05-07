@@ -1,0 +1,6 @@
+node_modules/
+.issues-agent-state.json
+package-lock.json
+package.json
+.DS_Store
+*.log
