@@ -42,24 +42,33 @@ Two extra files are needed (same install pattern — copy to `.github/workflows/
 - [`issues-email.yml`](issues-email.yml)
 - [`issues-email-runner.mjs`](issues-email-runner.mjs)
 
-Three extra GitHub secrets are required:
+Five GitHub secrets are required:
 
-| Secret name        | Value                                                  |
-|--------------------|--------------------------------------------------------|
-| `OUTLOOK_EMAIL`    | The Office 365 / Outlook address to send **from**      |
-| `OUTLOOK_PASSWORD` | Password for that account (use an App Password if MFA is enabled — see below) |
-| `EMAIL_TO`         | The address to send the digest **to**                  |
+| Secret      | Value                                              |
+|-------------|----------------------------------------------------|
+| `SMTP_HOST` | Your mail server hostname (e.g. `mail.yourdomain.com`) |
+| `SMTP_PORT` | `465` for SSL · `587` for STARTTLS                 |
+| `SMTP_USER` | The email address used to log in to the SMTP server |
+| `SMTP_PASS` | Password for that account                          |
+| `EMAIL_TO`  | The address to deliver the digest to               |
 
 Add them the same way as `ANTHROPIC_API_KEY` (repo → Settings → Secrets → Actions).
 
-> **App Password (MFA accounts):** If the sending account has multi-factor authentication
-> enabled, you cannot use your regular password. Instead, sign in to
-> **https://account.microsoft.com/security** → *Advanced security options* →
-> *App passwords* → create one named "Issues Agent" and use that as `OUTLOOK_PASSWORD`.
+**Common provider settings:**
 
-> **SMTP AUTH must be enabled** on the mailbox. In Microsoft 365 Admin Center go to
-> *Users → Active users → [the account] → Mail → Manage email apps* and make sure
-> **Authenticated SMTP** is checked.
+| Provider        | `SMTP_HOST`              | `SMTP_PORT` |
+|-----------------|--------------------------|-------------|
+| Custom / cPanel | `mail.yourdomain.com`    | `465`       |
+| Gmail           | `smtp.gmail.com`         | `465`       |
+| Outlook / M365  | `smtp.office365.com`     | `587`       |
+| Yahoo           | `smtp.mail.yahoo.com`    | `465`       |
+
+> **Gmail / Yahoo:** You must use an **App Password**, not your regular password.
+> Generate one in your account's security settings and use it as `SMTP_PASS`.
+
+> **Outlook / Microsoft 365:** SMTP AUTH must be enabled for the mailbox. In Microsoft
+> 365 Admin Center go to *Users → Active users → [the account] → Mail → Manage email
+> apps* and tick **Authenticated SMTP**.
 
 ---
 
@@ -317,6 +326,12 @@ Delete the saved cache and re-run:
 2. **Actions** → **Issues Agent** → **Run workflow**
 
 The agent will treat it as a first run and document everything.
+
+### Email digest: "Authentication unsuccessful" (535)
+Your SMTP credentials are being rejected. Check in order:
+1. `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, and `SMTP_PASS` secrets are all set correctly.
+2. If using Gmail or Yahoo, `SMTP_PASS` must be an **App Password**, not your regular password.
+3. If using Outlook / Microsoft 365, SMTP AUTH must be enabled on the mailbox (see Email digest section above).
 
 ### Too many Issues / want to undo
 Bulk-close them via the GitHub UI: Issues tab → select all → **Mark as** → **Closed**.
