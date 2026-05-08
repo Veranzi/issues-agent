@@ -1,0 +1,66 @@
+name: Issues Agent
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  workflow_dispatch: # allows manual trigger from GitHub UI
+
+permissions:
+  issues: write
+  contents: read
+
+jobs:
+  document-issues:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # full history so agent can scan all commits
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      # Restore persistent state so the agent only processes NEW commits
+      # (first run with no cache → full codebase scan, every run after → incremental).
+      - name: Restore agent state
+        uses: actions/cache@v4
+        with:
+          path: .github/workflows/.issues-agent-state.json
+          key: issues-agent-state-${{ github.repository }}
+          restore-keys: |
+            issues-agent-state-
+
+      - name: Install dependencies
+        # Use ad-hoc npm install in a temp dir so it doesn't conflict with the
+        # repo's own package.json / package-lock.json. node-fetch@3 is ESM-only.
+        working-directory: .github/workflows
+        run: |
+          npm init -y >/dev/null
+          npm install node-fetch@3
+
+      - name: Run Issues Agent
+        working-directory: .github/workflows
+        env:
+          # ISSUES_AGENT_TOKEN: optional fine-grained PAT with `issues: write`.
+          # Falls back to the workflow's built-in GITHUB_TOKEN (granted via the
+          # `permissions:` block above), which is enough for this repo.
+          GITHUB_TOKEN: ${{ secrets.ISSUES_AGENT_TOKEN || secrets.GITHUB_TOKEN }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          REPO_OWNER: ${{ github.repository_owner }}
+          REPO_NAME: ${{ github.event.repository.name }}
+          BRANCH: ${{ github.ref_name }}
+        run: node issues-agent-runner.mjs
+
+      # Save the updated state so the next run resumes from where this one left off.
+      - name: Save agent state
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: .github/workflows/.issues-agent-state.json
+          key: issues-agent-state-${{ github.repository }}-${{ github.run_id }}
