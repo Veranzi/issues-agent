@@ -5,12 +5,15 @@ import fs from 'fs';
 const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
 const OWNER        = process.env.REPO_OWNER;
 const REPO         = process.env.REPO_NAME;
-const FROM_EMAIL   = process.env.OUTLOOK_EMAIL;
-const FROM_PASS    = process.env.OUTLOOK_PASSWORD;
+const FROM_EMAIL   = process.env.SMTP_USER;
+const FROM_PASS    = process.env.SMTP_PASS;
 const TO_EMAIL     = process.env.EMAIL_TO;
+const SMTP_HOST    = process.env.SMTP_HOST;
+const SMTP_PORT    = parseInt(process.env.SMTP_PORT || '465', 10);
+const SMTP_SECURE  = SMTP_PORT === 465;
 const STATE_FILE   = '.issues-email-state.json';
 
-for (const [k, v] of Object.entries({ GITHUB_TOKEN, OWNER, REPO, FROM_EMAIL, FROM_PASS, TO_EMAIL })) {
+for (const [k, v] of Object.entries({ GITHUB_TOKEN, OWNER, REPO, FROM_EMAIL, FROM_PASS, TO_EMAIL, SMTP_HOST })) {
   if (!v) throw new Error(`Missing required env var: ${k}`);
 }
 
@@ -189,9 +192,9 @@ async function run() {
   }
 
   const transporter = nodemailer.createTransport({
-    host:   'smtp.office365.com',
-    port:   587,
-    secure: false,
+    host:   SMTP_HOST,
+    port:   SMTP_PORT,
+    secure: SMTP_SECURE,
     auth:   { user: FROM_EMAIL, pass: FROM_PASS },
   });
 
