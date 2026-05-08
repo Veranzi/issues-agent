@@ -196,6 +196,7 @@ async function run() {
     port:   SMTP_PORT,
     secure: SMTP_SECURE,
     auth:   { user: FROM_EMAIL, pass: FROM_PASS },
+    tls:    { rejectUnauthorized: false },
   });
 
   await transporter.sendMail({
