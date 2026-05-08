@@ -1,0 +1,55 @@
+name: Issues Email Digest
+
+on:
+  schedule:
+    - cron: '0 14 * * *'  # 17:00 EAT (UTC+3) daily
+  workflow_dispatch:        # manual trigger for testing
+
+permissions:
+  issues: read
+  contents: read
+
+jobs:
+  email-digest:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Restore email thread state
+        uses: actions/cache@v4
+        with:
+          path: .github/workflows/.issues-email-state.json
+          key: issues-email-state-${{ github.repository }}
+          restore-keys: |
+            issues-email-state-
+
+      - name: Install dependencies
+        working-directory: .github/workflows
+        run: |
+          npm init -y >/dev/null
+          npm install node-fetch@3 nodemailer
+
+      - name: Send email digest
+        working-directory: .github/workflows
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          OUTLOOK_EMAIL: ${{ secrets.OUTLOOK_EMAIL }}
+          OUTLOOK_PASSWORD: ${{ secrets.OUTLOOK_PASSWORD }}
+          EMAIL_TO: ${{ secrets.EMAIL_TO }}
+          REPO_OWNER: ${{ github.repository_owner }}
+          REPO_NAME: ${{ github.event.repository.name }}
+        run: node issues-email-runner.mjs
+
+      - name: Save email thread state
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: .github/workflows/.issues-email-state.json
+          key: issues-email-state-${{ github.repository }}-${{ github.run_id }}

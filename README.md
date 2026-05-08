@@ -23,6 +23,46 @@ who want auto-changelogs as Issues, teams who want to surface what each PR actua
 
 ---
 
+## Email digest (optional)
+
+A second workflow sends a daily email at **5 pm EAT** listing every issue created that
+day. Each day's email is a **reply** in the same thread, so the whole week reads as a
+single conversation trail in your inbox. The thread resets every Monday.
+
+```
+Monday     → new email  "Issues Agent — Week of 2026-05-04 | owner/repo"
+Tuesday    → reply      "Re: Issues Agent — Week of 2026-05-04 | owner/repo"
+Wednesday  → reply      (same thread)
+...
+Next Monday → new email  (fresh thread)
+```
+
+Two extra files are needed (same install pattern — copy to `.github/workflows/`):
+
+- [`issues-email.yml`](issues-email.yml)
+- [`issues-email-runner.mjs`](issues-email-runner.mjs)
+
+Three extra GitHub secrets are required:
+
+| Secret name        | Value                                                  |
+|--------------------|--------------------------------------------------------|
+| `OUTLOOK_EMAIL`    | The Office 365 / Outlook address to send **from**      |
+| `OUTLOOK_PASSWORD` | Password for that account (use an App Password if MFA is enabled — see below) |
+| `EMAIL_TO`         | The address to send the digest **to**                  |
+
+Add them the same way as `ANTHROPIC_API_KEY` (repo → Settings → Secrets → Actions).
+
+> **App Password (MFA accounts):** If the sending account has multi-factor authentication
+> enabled, you cannot use your regular password. Instead, sign in to
+> **https://account.microsoft.com/security** → *Advanced security options* →
+> *App passwords* → create one named "Issues Agent" and use that as `OUTLOOK_PASSWORD`.
+
+> **SMTP AUTH must be enabled** on the mailbox. In Microsoft 365 Admin Center go to
+> *Users → Active users → [the account] → Mail → Manage email apps* and make sure
+> **Authenticated SMTP** is checked.
+
+---
+
 ## Install
 
 Total time: **5–10 minutes** if you're new to GitHub Actions / Anthropic, **2 minutes** if you've done both before.
@@ -53,10 +93,19 @@ curl -fsSL -o .github/workflows/issues-agent.yml https://raw.githubusercontent.c
 curl -fsSL -o .github/workflows/issues-agent-runner.mjs https://raw.githubusercontent.com/Veranzi/issues-agent/main/issues-agent-runner.mjs
 ```
 
-Verify both files are now in your repo at:
+If you also want the **email digest**, grab the two extra files:
+
+```bash
+curl -fsSL -o .github/workflows/issues-email.yml https://raw.githubusercontent.com/Veranzi/issues-agent/main/issues-email.yml
+curl -fsSL -o .github/workflows/issues-email-runner.mjs https://raw.githubusercontent.com/Veranzi/issues-agent/main/issues-email-runner.mjs
+```
+
+Verify the files are now in your repo at:
 ```
 .github/workflows/issues-agent.yml
 .github/workflows/issues-agent-runner.mjs
+.github/workflows/issues-email.yml          ← email digest (optional)
+.github/workflows/issues-email-runner.mjs   ← email digest (optional)
 ```
 
 > **Important:** GitHub Actions ONLY scans `.github/workflows/`. If you put them anywhere else, the workflow will never run.
